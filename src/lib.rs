@@ -215,8 +215,6 @@ pub fn encode_prefixed<T: AsRef<[u8]>>(data: T) -> String {
 ///
 /// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
-/// Strips the `0x` prefix if present.
-///
 /// Prefer using [`decode_to_array`] instead when possible (at runtime), as it is likely to be faster.
 ///
 /// # Errors
@@ -231,9 +229,6 @@ pub fn encode_prefixed<T: AsRef<[u8]>>(data: T) -> String {
 /// const _: () = {
 ///     let bytes = lowercase_hex::const_decode_to_array(b"6b697769");
 ///     assert!(matches!(bytes.as_ref(), Ok(b"kiwi")));
-///
-///     let bytes = lowercase_hex::const_decode_to_array(b"0x6b697769");
-///     assert!(matches!(bytes.as_ref(), Ok(b"kiwi")));
 /// };
 /// ```
 #[inline]
@@ -241,7 +236,6 @@ pub const fn const_decode_to_array<const N: usize>(input: &[u8]) -> Result<[u8; 
     if input.len() % 2 != 0 {
         return Err(FromHexError::OddLength);
     }
-    let input = strip_prefix(input);
     if input.len() != N * 2 {
         return Err(FromHexError::InvalidStringLength);
     }
@@ -278,8 +272,6 @@ const fn const_decode_to_array_impl<const N: usize>(input: &[u8]) -> Option<[u8;
 ///
 /// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
-/// Strips the `0x` prefix if present.
-///
 /// # Errors
 ///
 /// This function returns an error if the input is not an even number of
@@ -290,10 +282,6 @@ const fn const_decode_to_array_impl<const N: usize>(input: &[u8]) -> Option<[u8;
 /// ```
 /// assert_eq!(
 ///     lowercase_hex::decode("48656c6c6f20776f726c6421"),
-///     Ok("Hello world!".to_owned().into_bytes())
-/// );
-/// assert_eq!(
-///     lowercase_hex::decode("0x48656c6c6f20776f726c6421"),
 ///     Ok("Hello world!".to_owned().into_bytes())
 /// );
 ///
@@ -307,7 +295,6 @@ pub fn decode<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, FromHexError> {
         if unlikely(input.len() % 2 != 0) {
             return Err(FromHexError::OddLength);
         }
-        let input = strip_prefix(input);
 
         // Do not initialize memory since it will be entirely overwritten.
         let len = input.len() / 2;
@@ -328,8 +315,6 @@ pub fn decode<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, FromHexError> {
 /// Decode a hex string into a mutable bytes slice.
 ///
 /// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
-///
-/// Strips the `0x` prefix if present.
 ///
 /// # Errors
 ///
@@ -356,8 +341,6 @@ pub fn decode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<()
 ///
 /// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
-/// Strips the `0x` prefix if present.
-///
 /// # Errors
 ///
 /// This function returns an error if the input is not an even number of
@@ -368,9 +351,6 @@ pub fn decode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<()
 ///
 /// ```
 /// let bytes = lowercase_hex::decode_to_array(b"6b697769").unwrap();
-/// assert_eq!(&bytes, b"kiwi");
-///
-/// let bytes = lowercase_hex::decode_to_array(b"0x6b697769").unwrap();
 /// assert_eq!(&bytes, b"kiwi");
 /// ```
 #[inline]
@@ -424,7 +404,6 @@ fn decode_to_slice_inner(input: &[u8], output: &mut [u8]) -> Result<(), FromHexE
     if unlikely(input.len() % 2 != 0) {
         return Err(FromHexError::OddLength);
     }
-    let input = strip_prefix(input);
     if unlikely(output.len() != input.len() / 2) {
         return Err(FromHexError::InvalidStringLength);
     }
@@ -461,14 +440,6 @@ const fn byte2hex(byte: u8) -> (u8, u8) {
     let high = table[(byte >> 4) as usize];
     let low = table[(byte & 0x0f) as usize];
     (high, low)
-}
-
-#[inline]
-const fn strip_prefix(bytes: &[u8]) -> &[u8] {
-    match bytes {
-        [b'0', b'x', rest @ ..] => rest,
-        _ => bytes,
-    }
 }
 
 /// Creates an invalid hex error from the input.
@@ -569,7 +540,7 @@ pub mod fuzzing {
 
     pub fn decode(input: &[u8]) -> TestCaseResult {
         if let Ok(decoded) = crate::decode(input) {
-            let input_len = strip_prefix(input).len() / 2;
+            let input_len = input.len() / 2;
             prop_assert_eq!(decoded.len(), input_len);
         }
 
@@ -650,7 +621,6 @@ pub mod fuzzing {
 /// ```
 /// const _: () = {
 ///     assert!(lowercase_hex::const_check(b"48656c6c6f20776f726c6421").is_ok());
-///     assert!(lowercase_hex::const_check(b"0x48656c6c6f20776f726c6421").is_ok());
 ///
 ///     assert!(lowercase_hex::const_check(b"48656c6c6f20776f726c642").is_err());
 ///     assert!(lowercase_hex::const_check(b"Hello world!").is_err());
@@ -661,7 +631,6 @@ pub const fn const_check(input: &[u8]) -> Result<(), FromHexError> {
     if input.len() % 2 != 0 {
         return Err(FromHexError::OddLength);
     }
-    let input = strip_prefix(input);
     if const_check_raw(input) {
         Ok(())
     } else {
@@ -709,7 +678,6 @@ pub const fn const_check_raw(input: &[u8]) -> bool {
 ///
 /// ```
 /// assert!(lowercase_hex::check("48656c6c6f20776f726c6421").is_ok());
-/// assert!(lowercase_hex::check("0x48656c6c6f20776f726c6421").is_ok());
 ///
 /// assert!(lowercase_hex::check("48656c6c6f20776f726c642").is_err());
 /// assert!(lowercase_hex::check("Hello world!").is_err());
@@ -721,15 +689,10 @@ pub fn check<T: AsRef<[u8]>>(input: T) -> Result<(), FromHexError> {
         if input.len() % 2 != 0 {
             return Err(FromHexError::OddLength);
         }
-        let stripped = strip_prefix(input);
-        if imp::check(stripped) {
+        if imp::check(input) {
             Ok(())
         } else {
-            let mut e = unsafe { invalid_hex_error(stripped) };
-            if let FromHexError::InvalidHexCharacter { ref mut index, .. } = e {
-                *index += input.len() - stripped.len();
-            }
-            Err(e)
+            Err(unsafe { invalid_hex_error(input) })
         }
     }
 

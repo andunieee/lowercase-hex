@@ -111,12 +111,15 @@ fn check() {
     assert!(lowercase_hex::check(ALL_UPPER).is_err());
     assert!(!lowercase_hex::check_raw(ALL_UPPER));
 
+    // 0x prefix should be rejected
+    assert!(lowercase_hex::check("0x48656c6c6f20776f726c6421").is_err());
+
     let error_cases = [
         ("ag", 1, 'g'),
-        ("0xbz", 3, 'z'),
-        ("0x12340000000n", 13, 'n'),
-        ("0xAB", 2, 'A'), // Uppercase should be rejected
-        ("0x123F", 5, 'F'), // Uppercase should be rejected
+        ("0xbz", 1, 'x'),           // 'x' is invalid hex character
+        ("0x12340000000n", 1, 'x'), // 'x' is invalid hex character
+        ("AB", 0, 'A'),             // Uppercase should be rejected
+        ("0x123F", 1, 'x'),         // 'x' is invalid hex character
     ];
     for (s, index, c) in error_cases {
         assert_eq!(s[index..].chars().next(), Some(c), "{s:?}");
