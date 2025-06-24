@@ -1,11 +1,13 @@
-//! [![github]](https://github.com/danipopes/const-hex)&ensp;[![crates-io]](https://crates.io/crates/const-hex)&ensp;[![docs-rs]](https://docs.rs/const-hex)
+//! [![github]](https://github.com/danipopes/lowercase-hex)&ensp;[![crates-io]](https://crates.io/crates/lowercase-hex)&ensp;[![docs-rs]](https://docs.rs/lowercase-hex)
 //!
 //! [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&labelColor=555555&logo=github
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?style=for-the-badge&labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs
 //!
-//! This crate provides a fast conversion of byte arrays to hexadecimal strings,
+//! This crate provides a fast conversion of byte arrays to **lowercase** hexadecimal strings,
 //! both at compile time, and at run time.
+//!
+//! **Important**: This crate only supports lowercase hex characters (a-f). Uppercase hex characters (A-F) are rejected during decoding.
 //!
 //! It aims to be a drop-in replacement for the [`hex`] crate, as well as
 //! extending the API with [const-eval](const_encode), a
@@ -144,7 +146,7 @@ pub const NIL: u8 = u8::MAX;
 /// # Examples
 ///
 /// ```
-/// const BUFFER: const_hex::Buffer<4> = const_hex::const_encode(b"kiwi");
+/// const BUFFER: lowercase_hex::Buffer<4> = lowercase_hex::const_encode(b"kiwi");
 /// assert_eq!(BUFFER.as_str(), "6b697769");
 /// ```
 #[inline]
@@ -165,9 +167,9 @@ pub const fn const_encode<const N: usize, const PREFIX: bool>(
 ///
 /// ```
 /// let mut bytes = [0u8; 4 * 2];
-/// const_hex::encode_to_slice(b"kiwi", &mut bytes)?;
+/// lowercase_hex::encode_to_slice(b"kiwi", &mut bytes)?;
 /// assert_eq!(&bytes, b"6b697769");
-/// # Ok::<_, const_hex::FromHexError>(())
+/// # Ok::<_, lowercase_hex::FromHexError>(())
 /// ```
 #[inline]
 pub fn encode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<(), FromHexError> {
@@ -184,8 +186,8 @@ pub fn encode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<()
 /// # Examples
 ///
 /// ```
-/// assert_eq!(const_hex::encode("Hello world!"), "48656c6c6f20776f726c6421");
-/// assert_eq!(const_hex::encode([1, 2, 3, 15, 16]), "0102030f10");
+/// assert_eq!(lowercase_hex::encode("Hello world!"), "48656c6c6f20776f726c6421");
+/// assert_eq!(lowercase_hex::encode([1, 2, 3, 15, 16]), "0102030f10");
 /// ```
 #[cfg(feature = "alloc")]
 #[inline]
@@ -200,8 +202,8 @@ pub fn encode<T: AsRef<[u8]>>(data: T) -> String {
 /// # Examples
 ///
 /// ```
-/// assert_eq!(const_hex::encode_prefixed("Hello world!"), "0x48656c6c6f20776f726c6421");
-/// assert_eq!(const_hex::encode_prefixed([1, 2, 3, 15, 16]), "0x0102030f10");
+/// assert_eq!(lowercase_hex::encode_prefixed("Hello world!"), "0x48656c6c6f20776f726c6421");
+/// assert_eq!(lowercase_hex::encode_prefixed([1, 2, 3, 15, 16]), "0x0102030f10");
 /// ```
 #[cfg(feature = "alloc")]
 #[inline]
@@ -227,10 +229,10 @@ pub fn encode_prefixed<T: AsRef<[u8]>>(data: T) -> String {
 ///
 /// ```
 /// const _: () = {
-///     let bytes = const_hex::const_decode_to_array(b"6b697769");
+///     let bytes = lowercase_hex::const_decode_to_array(b"6b697769");
 ///     assert!(matches!(bytes.as_ref(), Ok(b"kiwi")));
 ///
-///     let bytes = const_hex::const_decode_to_array(b"0x6b697769");
+///     let bytes = lowercase_hex::const_decode_to_array(b"0x6b697769");
 ///     assert!(matches!(bytes.as_ref(), Ok(b"kiwi")));
 /// };
 /// ```
@@ -287,16 +289,16 @@ const fn const_decode_to_array_impl<const N: usize>(input: &[u8]) -> Option<[u8;
 ///
 /// ```
 /// assert_eq!(
-///     const_hex::decode("48656c6c6f20776f726c6421"),
+///     lowercase_hex::decode("48656c6c6f20776f726c6421"),
 ///     Ok("Hello world!".to_owned().into_bytes())
 /// );
 /// assert_eq!(
-///     const_hex::decode("0x48656c6c6f20776f726c6421"),
+///     lowercase_hex::decode("0x48656c6c6f20776f726c6421"),
 ///     Ok("Hello world!".to_owned().into_bytes())
 /// );
 ///
-/// assert_eq!(const_hex::decode("123"), Err(const_hex::FromHexError::OddLength));
-/// assert!(const_hex::decode("foo").is_err());
+/// assert_eq!(lowercase_hex::decode("123"), Err(lowercase_hex::FromHexError::OddLength));
+/// assert!(lowercase_hex::decode("foo").is_err());
 /// ```
 #[cfg(feature = "alloc")]
 #[inline]
@@ -339,11 +341,11 @@ pub fn decode<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, FromHexError> {
 ///
 /// ```
 /// let mut bytes = [0u8; 4];
-/// const_hex::decode_to_slice("6b697769", &mut bytes).unwrap();
+/// lowercase_hex::decode_to_slice("6b697769", &mut bytes).unwrap();
 /// assert_eq!(&bytes, b"kiwi");
 ///
-/// const_hex::decode_to_slice("0x6b697769", &mut bytes).unwrap();
-/// assert_eq!(&bytes, b"kiwi");
+/// let res = lowercase_hex::decode_to_slice("6B697769", &mut bytes);
+/// assert!(res.is_err());
 /// ```
 #[inline]
 pub fn decode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<(), FromHexError> {
@@ -365,10 +367,10 @@ pub fn decode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<()
 /// # Example
 ///
 /// ```
-/// let bytes = const_hex::decode_to_array(b"6b697769").unwrap();
+/// let bytes = lowercase_hex::decode_to_array(b"6b697769").unwrap();
 /// assert_eq!(&bytes, b"kiwi");
 ///
-/// let bytes = const_hex::decode_to_array(b"0x6b697769").unwrap();
+/// let bytes = lowercase_hex::decode_to_array(b"0x6b697769").unwrap();
 /// assert_eq!(&bytes, b"kiwi");
 /// ```
 #[inline]
@@ -409,10 +411,7 @@ fn encode_inner<const PREFIX: bool>(data: &[u8]) -> String {
     unsafe { String::from_utf8_unchecked(buf) }
 }
 
-fn encode_to_slice_inner(
-    input: &[u8],
-    output: &mut [u8],
-) -> Result<(), FromHexError> {
+fn encode_to_slice_inner(input: &[u8], output: &mut [u8]) -> Result<(), FromHexError> {
     if unlikely(output.len() != 2 * input.len()) {
         return Err(FromHexError::InvalidStringLength);
     }
@@ -650,11 +649,11 @@ pub mod fuzzing {
 ///
 /// ```
 /// const _: () = {
-///     assert!(const_hex::const_check(b"48656c6c6f20776f726c6421").is_ok());
-///     assert!(const_hex::const_check(b"0x48656c6c6f20776f726c6421").is_ok());
+///     assert!(lowercase_hex::const_check(b"48656c6c6f20776f726c6421").is_ok());
+///     assert!(lowercase_hex::const_check(b"0x48656c6c6f20776f726c6421").is_ok());
 ///
-///     assert!(const_hex::const_check(b"48656c6c6f20776f726c642").is_err());
-///     assert!(const_hex::const_check(b"Hello world!").is_err());
+///     assert!(lowercase_hex::const_check(b"48656c6c6f20776f726c642").is_err());
+///     assert!(lowercase_hex::const_check(b"Hello world!").is_err());
 /// };
 /// ```
 #[inline]
@@ -680,15 +679,15 @@ pub const fn const_check(input: &[u8]) -> Result<(), FromHexError> {
 ///
 /// ```
 /// const _: () = {
-///     assert!(const_hex::const_check_raw(b"48656c6c6f20776f726c6421"));
+///     assert!(lowercase_hex::const_check_raw(b"48656c6c6f20776f726c6421"));
 ///
 ///     // Odd length, but valid hex
-///     assert!(const_hex::const_check_raw(b"48656c6c6f20776f726c642"));
+///     assert!(lowercase_hex::const_check_raw(b"48656c6c6f20776f726c642"));
 ///
 ///     // Valid hex string, but the prefix is not valid
-///     assert!(!const_hex::const_check_raw(b"0x48656c6c6f20776f726c6421"));
+///     assert!(!lowercase_hex::const_check_raw(b"0x48656c6c6f20776f726c6421"));
 ///
-///     assert!(!const_hex::const_check_raw(b"Hello world!"));
+///     assert!(!lowercase_hex::const_check_raw(b"Hello world!"));
 /// };
 /// ```
 #[inline]
@@ -709,11 +708,11 @@ pub const fn const_check_raw(input: &[u8]) -> bool {
 /// # Examples
 ///
 /// ```
-/// assert!(const_hex::check("48656c6c6f20776f726c6421").is_ok());
-/// assert!(const_hex::check("0x48656c6c6f20776f726c6421").is_ok());
+/// assert!(lowercase_hex::check("48656c6c6f20776f726c6421").is_ok());
+/// assert!(lowercase_hex::check("0x48656c6c6f20776f726c6421").is_ok());
 ///
-/// assert!(const_hex::check("48656c6c6f20776f726c642").is_err());
-/// assert!(const_hex::check("Hello world!").is_err());
+/// assert!(lowercase_hex::check("48656c6c6f20776f726c642").is_err());
+/// assert!(lowercase_hex::check("Hello world!").is_err());
 /// ```
 #[inline]
 pub fn check<T: AsRef<[u8]>>(input: T) -> Result<(), FromHexError> {
@@ -744,15 +743,15 @@ pub fn check<T: AsRef<[u8]>>(input: T) -> Result<(), FromHexError> {
 /// # Examples
 ///
 /// ```
-/// assert!(const_hex::check_raw("48656c6c6f20776f726c6421"));
+/// assert!(lowercase_hex::check_raw("48656c6c6f20776f726c6421"));
 ///
 /// // Odd length, but valid hex
-/// assert!(const_hex::check_raw("48656c6c6f20776f726c642"));
+/// assert!(lowercase_hex::check_raw("48656c6c6f20776f726c642"));
 ///
 /// // Valid hex string, but the prefix is not valid
-/// assert!(!const_hex::check_raw("0x48656c6c6f20776f726c6421"));
+/// assert!(!lowercase_hex::check_raw("0x48656c6c6f20776f726c6421"));
 ///
-/// assert!(!const_hex::check_raw("Hello world!"));
+/// assert!(!lowercase_hex::check_raw("Hello world!"));
 /// ```
 #[inline]
 pub fn check_raw<T: AsRef<[u8]>>(input: T) -> bool {

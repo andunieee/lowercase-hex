@@ -1,16 +1,16 @@
 [package]
-name = "const-hex"
-version = "1.14.1"
-authors = ["DaniPopes <57450786+DaniPopes@users.noreply.github.com>"]
-description = "Fast byte array to hex string conversion"
+name = "lowercase-hex"
+version = "0.1.0"
+authors = ["andunië <andunie@cassis.cash>"]
+description = "Fast byte array to lowercase hex string conversion"
 edition = "2021"
 rust-version = "1.64"
 license = "MIT OR Apache-2.0"
 categories = ["value-formatting", "no-std"]
-keywords = ["hex", "bytes", "fmt"]
-documentation = "https://docs.rs/const-hex"
-homepage = "https://github.com/danipopes/const-hex"
-repository = "https://github.com/danipopes/const-hex"
+keywords = ["hex", "bytes", "fmt", "lowercase"]
+documentation = "https://docs.rs/lowercase-hex"
+homepage = "https://github.com/danipopes/lowercase-hex"
+repository = "https://github.com/danipopes/lowercase-hex"
 exclude = [".github/", "benches/", "fuzz/", "tests/"]
 
 [package.metadata.docs.rs]
@@ -32,7 +32,6 @@ faster-hex = { version = "0.10.0", default-features = false, features = [
     "alloc",
 ] }
 hex = { version = "~0.4.2", default-features = false }
-rustc-hex = "2.1"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 
@@ -45,7 +44,7 @@ alloc = ["hex?/alloc", "serde?/alloc", "proptest?/alloc"]
 # Requires Rust 1.81 or newer.
 core-error = []
 
-# Serde support. Use with `#[serde(with = "const_hex")]`.
+# Serde support. Use with `#[serde(with = "lowercase_hex")]`.
 serde = ["hex?/serde", "dep:serde"]
 
 # Use `hex`'s traits instead of our own.

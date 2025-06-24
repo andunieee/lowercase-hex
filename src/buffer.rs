@@ -19,7 +19,7 @@ use alloc::{string::String, vec::Vec};
 /// # Examples
 ///
 /// ```
-/// let mut buffer = const_hex::Buffer::<4>::new();
+/// let mut buffer = lowercase_hex::Buffer::<4>::new();
 /// let printed = buffer.format(b"1234");
 /// assert_eq!(printed, "31323334");
 /// ```

@@ -1,7 +1,7 @@
 [package]
-name = "const-hex-fuzz"
+name = "lowercase-hex-fuzz"
 version = "0.0.0"
-authors = ["DaniPopes <57450786+DaniPopes@users.noreply.github.com>"]
+authors = ["andunië <andunie@cassis.cash>"]
 edition = "2021"
 publish = false
 
@@ -9,14 +9,14 @@ publish = false
 cargo-fuzz = true
 
 [dependencies]
-const-hex = { path = "..", features = ["__fuzzing"] }
+lowercase-hex = { path = "..", features = ["__fuzzing"] }
 libfuzzer-sys = "0.4"
 
 [[bin]]
-name = "fuzz_const_hex"
-path = "fuzz_targets/fuzz_const_hex.rs"
+name = "fuzz_lowercase_hex"
+path = "fuzz_targets/fuzz_lowercase_hex.rs"
 test = false
 doc = false
 
 [features]
-portable-simd = ["const-hex/portable-simd"]
+portable-simd = ["lowercase-hex/portable-simd"]

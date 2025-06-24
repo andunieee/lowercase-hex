@@ -27,7 +27,7 @@ use alloc::sync::Arc;
 ///
 /// ```
 /// #![allow(deprecated)]
-/// use const_hex::ToHex;
+/// use lowercase_hex::ToHex;
 ///
 /// assert_eq!("Hello world!".encode_hex::<String>(), "48656c6c6f20776f726c6421");
 /// ```
@@ -48,7 +48,7 @@ pub trait ToHex {
 /// # Examples
 ///
 /// ```
-/// use const_hex::ToHexExt;
+/// use lowercase_hex::ToHexExt;
 ///
 /// assert_eq!("Hello world!".encode_hex(), "48656c6c6f20776f726c6421");
 /// assert_eq!("Hello world!".encode_hex_with_prefix(), "0x48656c6c6f20776f726c6421");
@@ -126,11 +126,11 @@ impl<T: AsRef<[u8]>> ToHexExt for T {
 /// # Example
 ///
 /// ```
-/// use const_hex::FromHex;
+/// use lowercase_hex::FromHex;
 ///
 /// let buffer = <[u8; 12]>::from_hex("48656c6c6f20776f726c6421")?;
 /// assert_eq!(buffer, *b"Hello world!");
-/// # Ok::<(), const_hex::FromHexError>(())
+/// # Ok::<(), lowercase_hex::FromHexError>(())
 /// ```
 pub trait FromHex: Sized {
     /// The associated error which can be returned from parsing.

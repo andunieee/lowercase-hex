@@ -8,7 +8,7 @@
 //!
 //! #[derive(Serialize, Deserialize)]
 //! struct Foo {
-//!     #[serde(with = "const_hex")]
+//!     #[serde(with = "lowercase_hex")]
 //!     bar: Vec<u8>,
 //! }
 //! # }

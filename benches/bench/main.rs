@@ -12,7 +12,7 @@ use test::{black_box, Bencher};
 struct HexBufferFormat<const N: usize>(&'static [u8; N]);
 impl<const N: usize> fmt::Display for HexBufferFormat<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut buffer = const_hex::Buffer::<N>::new();
+        let mut buffer = lowercase_hex::Buffer::<N>::new();
         f.write_str(buffer.format(self.0))
     }
 }
@@ -32,14 +32,14 @@ macro_rules! benches {
         mod check {
             use super::*;
 
-            mod const_hex {
+            mod lowercase_hex {
                 use super::*;
 
                 $(
                     #[bench]
                     fn $name(b: &mut Bencher) {
                         b.iter(|| {
-                            ::const_hex::check_raw(black_box($dec))
+                            ::lowercase_hex::check_raw(black_box($dec))
                         });
                     }
                 )*
@@ -77,14 +77,14 @@ macro_rules! benches {
         mod decode {
             use super::*;
 
-            mod const_hex {
+            mod lowercase_hex {
                 use super::*;
 
                 $(
                     #[bench]
                     fn $name(b: &mut Bencher) {
                         b.iter(|| {
-                            ::const_hex::decode(black_box($dec))
+                            ::lowercase_hex::decode(black_box($dec))
                         });
                     }
                 )*
@@ -118,25 +118,12 @@ macro_rules! benches {
                     }
                 )*
             }
-
-            mod rustc_hex {
-                use super::*;
-
-                $(
-                    #[bench]
-                    fn $name(b: &mut Bencher) {
-                        b.iter(|| {
-                            ::rustc_hex::FromHex::from_hex::<Vec<_>>(black_box($dec))
-                        });
-                    }
-                )*
-            }
         }
 
         mod decode_to_slice {
             use super::*;
 
-            mod const_hex {
+            mod lowercase_hex {
                 use super::*;
 
                 $(
@@ -144,7 +131,7 @@ macro_rules! benches {
                     fn $name(b: &mut Bencher) {
                         let buf = &mut [0; $dec.len() / 2];
                         b.iter(|| {
-                            let res = ::const_hex::decode_to_slice(black_box($dec), black_box(buf));
+                            let res = ::lowercase_hex::decode_to_slice(black_box($dec), black_box(buf));
                             black_box(res.unwrap());
                         });
                     }
@@ -184,14 +171,14 @@ macro_rules! benches {
         mod encode {
             use super::*;
 
-            mod const_hex {
+            mod lowercase_hex {
                 use super::*;
 
                 $(
                     #[bench]
                     fn $name(b: &mut Bencher) {
                         b.iter(|| {
-                            ::const_hex::encode(black_box($enc))
+                            ::lowercase_hex::encode(black_box($enc))
                         });
                     }
                 )*
@@ -222,25 +209,12 @@ macro_rules! benches {
                     }
                 )*
             }
-
-            mod rustc_hex {
-                use super::*;
-
-                $(
-                    #[bench]
-                    fn $name(b: &mut Bencher) {
-                        b.iter(|| {
-                            ::rustc_hex::ToHex::to_hex::<String>(&black_box($enc)[..])
-                        });
-                    }
-                )*
-            }
         }
 
         mod encode_to_slice {
             use super::*;
 
-            mod const_hex {
+            mod lowercase_hex {
                 use super::*;
 
                 $(
@@ -248,7 +222,7 @@ macro_rules! benches {
                     fn $name(b: &mut Bencher) {
                         let buf = &mut [0; $enc.len() * 2];
                         b.iter(|| {
-                            ::const_hex::encode_to_slice(black_box($enc), black_box(buf))
+                            ::lowercase_hex::encode_to_slice(black_box($enc), black_box(buf))
                         });
                     }
                 )*
@@ -286,7 +260,7 @@ macro_rules! benches {
         mod format {
             use super::*;
 
-            mod const_hex {
+            mod lowercase_hex {
                 use super::*;
 
                 $(

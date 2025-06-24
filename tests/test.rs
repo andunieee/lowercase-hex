@@ -1,6 +1,6 @@
 #![allow(clippy::format_collect)]
 
-use const_hex::Buffer;
+use lowercase_hex::Buffer;
 
 #[test]
 fn buffer_fmt() {
@@ -45,14 +45,14 @@ fn buffer_const_lower() {
 #[test]
 #[cfg(feature = "alloc")]
 fn encode_lower() {
-    let encoded = const_hex::encode(ALL);
+    let encoded = lowercase_hex::encode(ALL);
     assert_lower(&encoded);
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn encode_lower_prefixed() {
-    let encoded = const_hex::encode_prefixed(ALL);
+    let encoded = lowercase_hex::encode_prefixed(ALL);
     assert_eq!(&encoded[0..2], "0x");
     assert_lower(&encoded[2..]);
 }
@@ -60,9 +60,9 @@ fn encode_lower_prefixed() {
 #[test]
 #[cfg(feature = "alloc")]
 fn decode_lower() {
-    let decoded = const_hex::decode(ALL_LOWER).unwrap();
+    let decoded = lowercase_hex::decode(ALL_LOWER).unwrap();
     assert_eq!(decoded, ALL);
-    let decoded = const_hex::decode_to_array(ALL_LOWER).unwrap();
+    let decoded = lowercase_hex::decode_to_array(ALL_LOWER).unwrap();
     assert_eq!(decoded, ALL);
 }
 
@@ -70,8 +70,8 @@ fn decode_lower() {
 #[cfg(feature = "alloc")]
 fn decode_upper_rejected() {
     // Uppercase should be rejected
-    assert!(const_hex::decode(ALL_UPPER).is_err());
-    assert!(const_hex::decode_to_array::<_, 256>(ALL_UPPER).is_err());
+    assert!(lowercase_hex::decode(ALL_UPPER).is_err());
+    assert!(lowercase_hex::decode_to_array::<_, 256>(ALL_UPPER).is_err());
 }
 
 #[test]
@@ -93,23 +93,23 @@ fn roundtrip_long() {
 
 #[cfg(feature = "alloc")]
 fn test_roundtrip(s: &str) {
-    const_hex::check(s).expect(s);
-    let decoded = const_hex::decode(s).expect(s);
+    lowercase_hex::check(s).expect(s);
+    let decoded = lowercase_hex::decode(s).expect(s);
     assert_eq!(decoded, hex::decode(s).expect(s));
-    assert_eq!(const_hex::encode(&decoded), s);
+    assert_eq!(lowercase_hex::encode(&decoded), s);
 }
 
 #[test]
 fn check() {
-    assert_eq!(const_hex::check(""), Ok(()));
-    assert!(const_hex::check_raw(""));
+    assert_eq!(lowercase_hex::check(""), Ok(()));
+    assert!(lowercase_hex::check_raw(""));
 
-    assert_eq!(const_hex::check(ALL_LOWER), Ok(()));
-    assert!(const_hex::check_raw(ALL_LOWER));
+    assert_eq!(lowercase_hex::check(ALL_LOWER), Ok(()));
+    assert!(lowercase_hex::check_raw(ALL_LOWER));
 
     // Uppercase should be rejected
-    assert!(const_hex::check(ALL_UPPER).is_err());
-    assert!(!const_hex::check_raw(ALL_UPPER));
+    assert!(lowercase_hex::check(ALL_UPPER).is_err());
+    assert!(!lowercase_hex::check_raw(ALL_UPPER));
 
     let error_cases = [
         ("ag", 1, 'g'),
@@ -121,8 +121,8 @@ fn check() {
     for (s, index, c) in error_cases {
         assert_eq!(s[index..].chars().next(), Some(c), "{s:?}");
         assert_eq!(
-            const_hex::check(s),
-            Err(const_hex::FromHexError::InvalidHexCharacter { c, index })
+            lowercase_hex::check(s),
+            Err(lowercase_hex::FromHexError::InvalidHexCharacter { c, index })
         );
     }
 }
@@ -132,7 +132,7 @@ fn check() {
 fn serde() {
     #[derive(serde::Serialize, serde::Deserialize)]
     struct All {
-        #[serde(with = "const_hex")]
+        #[serde(with = "lowercase_hex")]
         x: Vec<u8>,
     }
 
@@ -173,5 +173,3 @@ fn assert_lower(s: &str) {
     assert_eq!(ALL_LOWER, expected);
     assert_eq!(s, expected);
 }
-
-
