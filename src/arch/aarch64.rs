@@ -1,7 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use super::generic;
-use crate::get_chars_table;
+use crate::HEX_CHARS_LOWER;
 use core::arch::aarch64::*;
 
 pub(crate) const USE_CHECK_FN: bool = true;
@@ -31,7 +31,7 @@ pub(crate) unsafe fn encode(input: &[u8], output: *mut u8) {
 #[target_feature(enable = "neon")]
 pub(crate) unsafe fn encode_neon(input: &[u8], output: *mut u8) {
     // Load table.
-    let hex_table = vld1q_u8(get_chars_table().as_ptr());
+    let hex_table = vld1q_u8(HEX_CHARS_LOWER.as_ptr());
 
     generic::encode_unaligned_chunks::<_>(input, output, |chunk: uint8x16_t| {
         // Load input bytes and mask to nibbles.

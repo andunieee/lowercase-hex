@@ -1,7 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use super::generic;
-use crate::get_chars_table;
+use crate::HEX_CHARS_LOWER;
 use core::arch::wasm32::*;
 
 pub(crate) const USE_CHECK_FN: bool = true;
@@ -10,7 +10,7 @@ pub(crate) const USE_CHECK_FN: bool = true;
 #[target_feature(enable = "simd128")]
 pub(crate) unsafe fn encode(input: &[u8], output: *mut u8) {
     // Load table.
-    let hex_table = v128_load(get_chars_table().as_ptr().cast());
+    let hex_table = v128_load(HEX_CHARS_LOWER.as_ptr().cast());
 
     generic::encode_unaligned_chunks::<_>(input, output, |chunk: v128| {
         // Load input bytes and mask to nibbles.

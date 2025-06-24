@@ -1,8 +1,9 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 #![allow(unexpected_cfgs)]
 
+use crate::HEX_CHARS_LOWER;
+
 use super::generic;
-use crate::get_chars_table;
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86::*;
@@ -47,7 +48,7 @@ pub(crate) unsafe fn encode(input: &[u8], output: *mut u8) {
 #[target_feature(enable = "ssse3")]
 unsafe fn encode_ssse3(input: &[u8], output: *mut u8) {
     // Load table.
-    let hex_table = _mm_loadu_si128(get_chars_table().as_ptr().cast());
+    let hex_table = _mm_loadu_si128(HEX_CHARS_LOWER.as_ptr().cast());
 
     generic::encode_unaligned_chunks::<_>(input, output, |chunk: __m128i| {
         // Load input bytes and mask to nibbles.

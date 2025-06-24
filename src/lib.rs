@@ -478,11 +478,6 @@ const unsafe fn invalid_hex_error(input: &[u8]) -> FromHexError {
     }
 }
 
-#[inline(always)]
-const fn get_chars_table() -> &'static [u8; 16] {
-    HEX_CHARS_LOWER
-}
-
 const fn make_decode_lut() -> [u8; 256] {
     let mut lut = [0; 256];
     let mut i = 0u8;

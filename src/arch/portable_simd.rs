@@ -1,7 +1,7 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 use super::generic;
-use crate::get_chars_table;
+use crate::HEX_CHARS_LOWER;
 use core::simd::prelude::*;
 
 type Simd = u8x16;
@@ -10,7 +10,7 @@ pub(crate) const USE_CHECK_FN: bool = true;
 
 pub(crate) unsafe fn encode(input: &[u8], output: *mut u8) {
     // Load table.
-    let hex_table = Simd::from_array(*get_chars_table());
+    let hex_table = Simd::from_array(*HEX_CHARS_LOWER);
 
     generic::encode_unaligned_chunks::<_>(input, output, |chunk: Simd| {
         // Load input bytes and mask to nibbles.
