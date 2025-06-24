@@ -1,9 +1,9 @@
 # lowercase-hex
 
-[![github](https://img.shields.io/badge/github-danipopes/lowercase--hex-8da0cb?style=for-the-badge&labelColor=555555&logo=github)](https://github.com/danipopes/lowercase-hex)
+[![github](https://img.shields.io/badge/github-andunieee/lowercase--hex-8da0cb?style=for-the-badge&labelColor=555555&logo=github)](https://github.com/andunieee/lowercase-hex)
 [![crates.io](https://img.shields.io/crates/v/lowercase-hex.svg?style=for-the-badge&color=fc8d62&logo=rust)](https://crates.io/crates/lowercase-hex)
 [![docs.rs](https://img.shields.io/badge/docs.rs-lowercase--hex-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs)](https://docs.rs/lowercase-hex)
-[![build status](https://img.shields.io/github/actions/workflow/status/danipopes/lowercase-hex/ci.yml?branch=master&style=for-the-badge)](https://github.com/danipopes/lowercase-hex/actions?query=branch%3Amaster)
+[![build status](https://img.shields.io/github/actions/workflow/status/andunieee/lowercase-hex/ci.yml?branch=master&style=for-the-badge)](https://github.com/andunieee/lowercase-hex/actions?query=branch%3Amaster)
 
 This crate provides a fast conversion of byte arrays to **lowercase** hexadecimal strings,
 both at compile time, and at run time.

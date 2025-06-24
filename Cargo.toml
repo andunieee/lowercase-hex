@@ -9,8 +9,8 @@ license = "MIT OR Apache-2.0"
 categories = ["value-formatting", "no-std"]
 keywords = ["hex", "bytes", "fmt", "lowercase"]
 documentation = "https://docs.rs/lowercase-hex"
-homepage = "https://github.com/danipopes/lowercase-hex"
-repository = "https://github.com/danipopes/lowercase-hex"
+homepage = "https://github.com/andunieee/lowercase-hex"
+repository = "https://github.com/andunieee/lowercase-hex"
 exclude = [".github/", "benches/", "fuzz/", "tests/"]
 
 [package.metadata.docs.rs]
