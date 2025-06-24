@@ -37,19 +37,19 @@ cfg_if::cfg_if! {
 }
 
 #[inline]
-pub(crate) unsafe fn encode<const UPPER: bool>(input: &[u8], output: *mut u8) {
+pub(crate) unsafe fn encode(input: &[u8], output: *mut u8) {
     if !has_ssse3() {
-        return generic::encode::<UPPER>(input, output);
+        return generic::encode(input, output);
     }
-    encode_ssse3::<UPPER>(input, output);
+    encode_ssse3(input, output);
 }
 
 #[target_feature(enable = "ssse3")]
-unsafe fn encode_ssse3<const UPPER: bool>(input: &[u8], output: *mut u8) {
+unsafe fn encode_ssse3(input: &[u8], output: *mut u8) {
     // Load table.
-    let hex_table = _mm_loadu_si128(get_chars_table::<UPPER>().as_ptr().cast());
+    let hex_table = _mm_loadu_si128(get_chars_table().as_ptr().cast());
 
-    generic::encode_unaligned_chunks::<UPPER, _>(input, output, |chunk: __m128i| {
+    generic::encode_unaligned_chunks::<_>(input, output, |chunk: __m128i| {
         // Load input bytes and mask to nibbles.
         let mut lo = _mm_and_si128(chunk, _mm_set1_epi8(0x0F));
         #[allow(clippy::cast_possible_wrap)]
@@ -74,13 +74,10 @@ pub(crate) fn check(input: &[u8]) -> bool {
     unsafe { check_sse2(input) }
 }
 
-/// Modified from [`faster-hex`](https://github.com/nervosnetwork/faster-hex/blob/856aba7b141a5fe16113fae110d535065882f25a/src/decode.rs).
 #[target_feature(enable = "sse2")]
 unsafe fn check_sse2(input: &[u8]) -> bool {
     let ascii_zero = _mm_set1_epi8((b'0' - 1) as i8);
     let ascii_nine = _mm_set1_epi8((b'9' + 1) as i8);
-    let ascii_ua = _mm_set1_epi8((b'A' - 1) as i8);
-    let ascii_uf = _mm_set1_epi8((b'F' + 1) as i8);
     let ascii_la = _mm_set1_epi8((b'a' - 1) as i8);
     let ascii_lf = _mm_set1_epi8((b'f' + 1) as i8);
 
@@ -89,16 +86,11 @@ unsafe fn check_sse2(input: &[u8]) -> bool {
         let le9 = _mm_cmplt_epi8(chunk, ascii_nine);
         let valid_digit = _mm_and_si128(ge0, le9);
 
-        let geua = _mm_cmpgt_epi8(chunk, ascii_ua);
-        let leuf = _mm_cmplt_epi8(chunk, ascii_uf);
-        let valid_upper = _mm_and_si128(geua, leuf);
-
         let gela = _mm_cmpgt_epi8(chunk, ascii_la);
         let lelf = _mm_cmplt_epi8(chunk, ascii_lf);
         let valid_lower = _mm_and_si128(gela, lelf);
 
-        let valid_letter = _mm_or_si128(valid_lower, valid_upper);
-        let valid_mask = _mm_movemask_epi8(_mm_or_si128(valid_digit, valid_letter));
+        let valid_mask = _mm_movemask_epi8(_mm_or_si128(valid_digit, valid_lower));
         valid_mask == 0xffff
     })
 }

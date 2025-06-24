@@ -63,7 +63,7 @@ use alloc::{string::String, vec::Vec};
 use cpufeatures as _;
 
 mod arch;
-use arch::{generic, imp};
+use arch::imp;
 
 mod impl_core;
 
@@ -121,7 +121,7 @@ cfg_if! {
         pub use self::serde::deserialize;
         #[cfg(feature = "alloc")]
         #[doc(no_inline)]
-        pub use self::serde::{serialize, serialize_upper};
+        pub use self::serde::serialize;
     }
 }
 
@@ -130,9 +130,6 @@ pub use buffer::Buffer;
 
 /// The table of lowercase characters used for hex encoding.
 pub const HEX_CHARS_LOWER: &[u8; 16] = b"0123456789abcdef";
-
-/// The table of uppercase characters used for hex encoding.
-pub const HEX_CHARS_UPPER: &[u8; 16] = b"0123456789ABCDEF";
 
 /// The lookup table of hex byte to value, used for hex decoding.
 ///
@@ -174,30 +171,7 @@ pub const fn const_encode<const N: usize, const PREFIX: bool>(
 /// ```
 #[inline]
 pub fn encode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<(), FromHexError> {
-    encode_to_slice_inner::<false>(input.as_ref(), output)
-}
-
-/// Encodes `input` as a hex string using uppercase characters into a mutable
-/// slice of bytes `output`.
-///
-/// # Errors
-///
-/// If the output buffer is not exactly `input.len() * 2` bytes long.
-///
-/// # Examples
-///
-/// ```
-/// let mut bytes = [0u8; 4 * 2];
-/// const_hex::encode_to_slice_upper(b"kiwi", &mut bytes)?;
-/// assert_eq!(&bytes, b"6B697769");
-/// # Ok::<_, const_hex::FromHexError>(())
-/// ```
-#[inline]
-pub fn encode_to_slice_upper<T: AsRef<[u8]>>(
-    input: T,
-    output: &mut [u8],
-) -> Result<(), FromHexError> {
-    encode_to_slice_inner::<true>(input.as_ref(), output)
+    encode_to_slice_inner(input.as_ref(), output)
 }
 
 /// Encodes `data` as a hex string using lowercase characters.
@@ -216,23 +190,7 @@ pub fn encode_to_slice_upper<T: AsRef<[u8]>>(
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode<T: AsRef<[u8]>>(data: T) -> String {
-    encode_inner::<false, false>(data.as_ref())
-}
-
-/// Encodes `data` as a hex string using uppercase characters.
-///
-/// Apart from the characters' casing, this works exactly like `encode()`.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(const_hex::encode_upper("Hello world!"), "48656C6C6F20776F726C6421");
-/// assert_eq!(const_hex::encode_upper([1, 2, 3, 15, 16]), "0102030F10");
-/// ```
-#[cfg(feature = "alloc")]
-#[inline]
-pub fn encode_upper<T: AsRef<[u8]>>(data: T) -> String {
-    encode_inner::<true, false>(data.as_ref())
+    encode_inner::<false>(data.as_ref())
 }
 
 /// Encodes `data` as a prefixed hex string using lowercase characters.
@@ -248,138 +206,12 @@ pub fn encode_upper<T: AsRef<[u8]>>(data: T) -> String {
 #[cfg(feature = "alloc")]
 #[inline]
 pub fn encode_prefixed<T: AsRef<[u8]>>(data: T) -> String {
-    encode_inner::<false, true>(data.as_ref())
-}
-
-/// Encodes `data` as a prefixed hex string using uppercase characters.
-///
-/// See [`encode_upper()`] for more details.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(const_hex::encode_upper_prefixed("Hello world!"), "0x48656C6C6F20776F726C6421");
-/// assert_eq!(const_hex::encode_upper_prefixed([1, 2, 3, 15, 16]), "0x0102030F10");
-/// ```
-#[cfg(feature = "alloc")]
-#[inline]
-pub fn encode_upper_prefixed<T: AsRef<[u8]>>(data: T) -> String {
-    encode_inner::<true, true>(data.as_ref())
-}
-
-/// Returns `true` if the input is a valid hex string and can be decoded successfully.
-///
-/// Prefer using [`check`] instead when possible (at runtime), as it is likely to be faster.
-///
-/// # Examples
-///
-/// ```
-/// const _: () = {
-///     assert!(const_hex::const_check(b"48656c6c6f20776f726c6421").is_ok());
-///     assert!(const_hex::const_check(b"0x48656c6c6f20776f726c6421").is_ok());
-///
-///     assert!(const_hex::const_check(b"48656c6c6f20776f726c642").is_err());
-///     assert!(const_hex::const_check(b"Hello world!").is_err());
-/// };
-/// ```
-#[inline]
-pub const fn const_check(input: &[u8]) -> Result<(), FromHexError> {
-    if input.len() % 2 != 0 {
-        return Err(FromHexError::OddLength);
-    }
-    let input = strip_prefix(input);
-    if const_check_raw(input) {
-        Ok(())
-    } else {
-        Err(unsafe { invalid_hex_error(input) })
-    }
-}
-
-/// Returns `true` if the input is a valid hex string.
-///
-/// Note that this does not check prefixes or length, but just the contents of the string.
-///
-/// Prefer using [`check_raw`] instead when possible (at runtime), as it is likely to be faster.
-///
-/// # Examples
-///
-/// ```
-/// const _: () = {
-///     assert!(const_hex::const_check_raw(b"48656c6c6f20776f726c6421"));
-///
-///     // Odd length, but valid hex
-///     assert!(const_hex::const_check_raw(b"48656c6c6f20776f726c642"));
-///
-///     // Valid hex string, but the prefix is not valid
-///     assert!(!const_hex::const_check_raw(b"0x48656c6c6f20776f726c6421"));
-///
-///     assert!(!const_hex::const_check_raw(b"Hello world!"));
-/// };
-/// ```
-#[inline]
-pub const fn const_check_raw(input: &[u8]) -> bool {
-    generic::check(input)
-}
-
-/// Returns `true` if the input is a valid hex string and can be decoded successfully.
-///
-/// # Examples
-///
-/// ```
-/// assert!(const_hex::check("48656c6c6f20776f726c6421").is_ok());
-/// assert!(const_hex::check("0x48656c6c6f20776f726c6421").is_ok());
-///
-/// assert!(const_hex::check("48656c6c6f20776f726c642").is_err());
-/// assert!(const_hex::check("Hello world!").is_err());
-/// ```
-#[inline]
-pub fn check<T: AsRef<[u8]>>(input: T) -> Result<(), FromHexError> {
-    #[allow(clippy::missing_const_for_fn)]
-    fn check_inner(input: &[u8]) -> Result<(), FromHexError> {
-        if input.len() % 2 != 0 {
-            return Err(FromHexError::OddLength);
-        }
-        let stripped = strip_prefix(input);
-        if imp::check(stripped) {
-            Ok(())
-        } else {
-            let mut e = unsafe { invalid_hex_error(stripped) };
-            if let FromHexError::InvalidHexCharacter { ref mut index, .. } = e {
-                *index += input.len() - stripped.len();
-            }
-            Err(e)
-        }
-    }
-
-    check_inner(input.as_ref())
-}
-
-/// Returns `true` if the input is a valid hex string.
-///
-/// Note that this does not check prefixes or length, but just the contents of the string.
-///
-/// # Examples
-///
-/// ```
-/// assert!(const_hex::check_raw("48656c6c6f20776f726c6421"));
-///
-/// // Odd length, but valid hex
-/// assert!(const_hex::check_raw("48656c6c6f20776f726c642"));
-///
-/// // Valid hex string, but the prefix is not valid
-/// assert!(!const_hex::check_raw("0x48656c6c6f20776f726c6421"));
-///
-/// assert!(!const_hex::check_raw("Hello world!"));
-/// ```
-#[inline]
-pub fn check_raw<T: AsRef<[u8]>>(input: T) -> bool {
-    imp::check(input.as_ref())
+    encode_inner::<true>(data.as_ref())
 }
 
 /// Decode a hex string into a fixed-length byte-array.
 ///
-/// Both, upper and lower case characters are valid in the input string and can
-/// even be mixed (e.g. `f9b4ca`, `F9B4CA` and `f9B4Ca` are all valid strings).
+/// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
 /// Strips the `0x` prefix if present.
 ///
@@ -442,8 +274,7 @@ const fn const_decode_to_array_impl<const N: usize>(input: &[u8]) -> Option<[u8;
 
 /// Decodes a hex string into raw bytes.
 ///
-/// Both, upper and lower case characters are valid in the input string and can
-/// even be mixed (e.g. `f9b4ca`, `F9B4CA` and `f9B4Ca` are all valid strings).
+/// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
 /// Strips the `0x` prefix if present.
 ///
@@ -494,8 +325,7 @@ pub fn decode<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, FromHexError> {
 
 /// Decode a hex string into a mutable bytes slice.
 ///
-/// Both, upper and lower case characters are valid in the input string and can
-/// even be mixed (e.g. `f9b4ca`, `F9B4CA` and `f9B4Ca` are all valid strings).
+/// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
 /// Strips the `0x` prefix if present.
 ///
@@ -522,8 +352,7 @@ pub fn decode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<()
 
 /// Decode a hex string into a fixed-length byte-array.
 ///
-/// Both, upper and lower case characters are valid in the input string and can
-/// even be mixed (e.g. `f9b4ca`, `F9B4CA` and `f9B4Ca` are all valid strings).
+/// Only lowercase characters are valid in the input string (e.g. `f9b4ca`).
 ///
 /// Strips the `0x` prefix if present.
 ///
@@ -557,7 +386,7 @@ pub fn decode_to_array<T: AsRef<[u8]>, const N: usize>(input: T) -> Result<[u8; 
 }
 
 #[cfg(feature = "alloc")]
-fn encode_inner<const UPPER: bool, const PREFIX: bool>(data: &[u8]) -> String {
+fn encode_inner<const PREFIX: bool>(data: &[u8]) -> String {
     let capacity = PREFIX as usize * 2 + data.len() * 2;
     let mut buf = Vec::<u8>::with_capacity(capacity);
     // SAFETY: The entire vec is never read from, and gets dropped if decoding fails.
@@ -575,12 +404,12 @@ fn encode_inner<const UPPER: bool, const PREFIX: bool>(data: &[u8]) -> String {
         }
     }
     // SAFETY: `output` is long enough (input.len() * 2).
-    unsafe { imp::encode::<UPPER>(data, output) };
+    unsafe { imp::encode(data, output) };
     // SAFETY: We only write only ASCII bytes.
     unsafe { String::from_utf8_unchecked(buf) }
 }
 
-fn encode_to_slice_inner<const UPPER: bool>(
+fn encode_to_slice_inner(
     input: &[u8],
     output: &mut [u8],
 ) -> Result<(), FromHexError> {
@@ -588,7 +417,7 @@ fn encode_to_slice_inner<const UPPER: bool>(
         return Err(FromHexError::InvalidStringLength);
     }
     // SAFETY: Lengths are checked above.
-    unsafe { imp::encode::<UPPER>(input, output.as_mut_ptr()) };
+    unsafe { imp::encode(input, output.as_mut_ptr()) };
     Ok(())
 }
 
@@ -628,8 +457,8 @@ unsafe fn decode_checked(input: &[u8], output: &mut [u8]) -> Result<(), FromHexE
 }
 
 #[inline]
-const fn byte2hex<const UPPER: bool>(byte: u8) -> (u8, u8) {
-    let table = get_chars_table::<UPPER>();
+const fn byte2hex(byte: u8) -> (u8, u8) {
+    let table = HEX_CHARS_LOWER;
     let high = table[(byte >> 4) as usize];
     let low = table[(byte & 0x0f) as usize];
     (high, low)
@@ -680,12 +509,8 @@ const unsafe fn invalid_hex_error(input: &[u8]) -> FromHexError {
 }
 
 #[inline(always)]
-const fn get_chars_table<const UPPER: bool>() -> &'static [u8; 16] {
-    if UPPER {
-        HEX_CHARS_UPPER
-    } else {
-        HEX_CHARS_LOWER
-    }
+const fn get_chars_table() -> &'static [u8; 16] {
+    HEX_CHARS_LOWER
 }
 
 const fn make_decode_lut() -> [u8; 256] {
@@ -694,7 +519,6 @@ const fn make_decode_lut() -> [u8; 256] {
     loop {
         lut[i as usize] = match i {
             b'0'..=b'9' => i - b'0',
-            b'A'..=b'F' => i - b'A' + 10,
             b'a'..=b'f' => i - b'a' + 10,
             // use max value for invalid characters
             _ => NIL,
@@ -797,7 +621,7 @@ pub mod fuzzing {
         }
 
         #[test]
-        fn fuzz_check_true(s in "[0-9a-fA-F]+") {
+        fn fuzz_check_true(s in "[0-9a-f]+") {
             let s = s.as_bytes();
             prop_assert!(crate::check_raw(s));
             prop_assert!(crate::const_check_raw(s));
@@ -808,7 +632,7 @@ pub mod fuzzing {
         }
 
         #[test]
-        fn fuzz_check_false(s in ".{16}[0-9a-fA-F]+") {
+        fn fuzz_check_false(s in ".{16}[0-9a-f]+") {
             let s = s.as_bytes();
             prop_assert!(crate::check(s).is_err());
             prop_assert!(crate::const_check(s).is_err());
@@ -816,4 +640,121 @@ pub mod fuzzing {
             prop_assert!(!crate::const_check_raw(s));
         }
     }
+}
+
+/// Returns `true` if the input is a valid hex string and can be decoded successfully.
+///
+/// Prefer using [`check`] instead when possible (at runtime), as it is likely to be faster.
+///
+/// # Examples
+///
+/// ```
+/// const _: () = {
+///     assert!(const_hex::const_check(b"48656c6c6f20776f726c6421").is_ok());
+///     assert!(const_hex::const_check(b"0x48656c6c6f20776f726c6421").is_ok());
+///
+///     assert!(const_hex::const_check(b"48656c6c6f20776f726c642").is_err());
+///     assert!(const_hex::const_check(b"Hello world!").is_err());
+/// };
+/// ```
+#[inline]
+pub const fn const_check(input: &[u8]) -> Result<(), FromHexError> {
+    if input.len() % 2 != 0 {
+        return Err(FromHexError::OddLength);
+    }
+    let input = strip_prefix(input);
+    if const_check_raw(input) {
+        Ok(())
+    } else {
+        Err(unsafe { invalid_hex_error(input) })
+    }
+}
+
+/// Returns `true` if the input is a valid hex string.
+///
+/// Note that this does not check prefixes or length, but just the contents of the string.
+///
+/// Prefer using [`check_raw`] instead when possible (at runtime), as it is likely to be faster.
+///
+/// # Examples
+///
+/// ```
+/// const _: () = {
+///     assert!(const_hex::const_check_raw(b"48656c6c6f20776f726c6421"));
+///
+///     // Odd length, but valid hex
+///     assert!(const_hex::const_check_raw(b"48656c6c6f20776f726c642"));
+///
+///     // Valid hex string, but the prefix is not valid
+///     assert!(!const_hex::const_check_raw(b"0x48656c6c6f20776f726c6421"));
+///
+///     assert!(!const_hex::const_check_raw(b"Hello world!"));
+/// };
+/// ```
+#[inline]
+pub const fn const_check_raw(input: &[u8]) -> bool {
+    let mut i = 0;
+    while i < input.len() {
+        let byte = input[i];
+        if HEX_DECODE_LUT[byte as usize] == NIL {
+            return false;
+        }
+        i += 1;
+    }
+    true
+}
+
+/// Returns `true` if the input is a valid hex string and can be decoded successfully.
+///
+/// # Examples
+///
+/// ```
+/// assert!(const_hex::check("48656c6c6f20776f726c6421").is_ok());
+/// assert!(const_hex::check("0x48656c6c6f20776f726c6421").is_ok());
+///
+/// assert!(const_hex::check("48656c6c6f20776f726c642").is_err());
+/// assert!(const_hex::check("Hello world!").is_err());
+/// ```
+#[inline]
+pub fn check<T: AsRef<[u8]>>(input: T) -> Result<(), FromHexError> {
+    #[allow(clippy::missing_const_for_fn)]
+    fn check_inner(input: &[u8]) -> Result<(), FromHexError> {
+        if input.len() % 2 != 0 {
+            return Err(FromHexError::OddLength);
+        }
+        let stripped = strip_prefix(input);
+        if imp::check(stripped) {
+            Ok(())
+        } else {
+            let mut e = unsafe { invalid_hex_error(stripped) };
+            if let FromHexError::InvalidHexCharacter { ref mut index, .. } = e {
+                *index += input.len() - stripped.len();
+            }
+            Err(e)
+        }
+    }
+
+    check_inner(input.as_ref())
+}
+
+/// Returns `true` if the input is a valid hex string.
+///
+/// Note that this does not check prefixes or length, but just the contents of the string.
+///
+/// # Examples
+///
+/// ```
+/// assert!(const_hex::check_raw("48656c6c6f20776f726c6421"));
+///
+/// // Odd length, but valid hex
+/// assert!(const_hex::check_raw("48656c6c6f20776f726c642"));
+///
+/// // Valid hex string, but the prefix is not valid
+/// assert!(!const_hex::check_raw("0x48656c6c6f20776f726c6421"));
+///
+/// assert!(!const_hex::check_raw("Hello world!"));
+/// ```
+#[inline]
+pub fn check_raw<T: AsRef<[u8]>>(input: T) -> bool {
+    imp::check(input.as_ref())
 }

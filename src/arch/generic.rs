@@ -11,9 +11,9 @@ pub(crate) const USE_CHECK_FN: bool = false;
 /// # Safety
 ///
 /// `output` must be a valid pointer to at least `2 * input.len()` bytes.
-pub(crate) unsafe fn encode<const UPPER: bool>(input: &[u8], output: *mut u8) {
+pub(crate) unsafe fn encode(input: &[u8], output: *mut u8) {
     for (i, byte) in input.iter().enumerate() {
-        let (high, low) = byte2hex::<UPPER>(*byte);
+        let (high, low) = byte2hex(*byte);
         unsafe {
             output.add(i * 2).write(high);
             output.add(i * 2 + 1).write(low);
@@ -26,7 +26,7 @@ pub(crate) unsafe fn encode<const UPPER: bool>(input: &[u8], output: *mut u8) {
 /// The remainder is encoded using the generic [`encode`].
 #[inline]
 #[allow(dead_code)]
-pub(crate) unsafe fn encode_unaligned_chunks<const UPPER: bool, T: Copy>(
+pub(crate) unsafe fn encode_unaligned_chunks<T: Copy>(
     input: &[u8],
     output: *mut u8,
     mut encode_chunk: impl FnMut(T) -> (T, T),
@@ -42,7 +42,7 @@ pub(crate) unsafe fn encode_unaligned_chunks<const UPPER: bool, T: Copy>(
         }
     }
     let n_out_chunks = n_in_chunks * 2;
-    unsafe { encode::<UPPER>(remainder, unsafe { chunk_output.add(n_out_chunks).cast() }) };
+    unsafe { encode(remainder, unsafe { chunk_output.add(n_out_chunks).cast() }) };
 }
 
 /// Default check function.

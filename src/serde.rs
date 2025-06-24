@@ -38,22 +38,10 @@ mod serialize {
     {
         serializer.serialize_str(&crate::encode_prefixed(data.as_ref()))
     }
-
-    /// Serializes `data` as hex string using uppercase characters.
-    ///
-    /// Apart from the characters' casing, this works exactly like [`serialize`].
-    #[inline]
-    pub fn serialize_upper<S, T>(data: T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        T: AsRef<[u8]>,
-    {
-        serializer.serialize_str(&crate::encode_upper_prefixed(data.as_ref()))
-    }
 }
 
 #[cfg(feature = "alloc")]
-pub use serialize::{serialize, serialize_upper};
+pub use serialize::serialize;
 
 /// Deserializes a hex string into raw bytes.
 ///

@@ -30,7 +30,6 @@ use alloc::sync::Arc;
 /// use const_hex::ToHex;
 ///
 /// assert_eq!("Hello world!".encode_hex::<String>(), "48656c6c6f20776f726c6421");
-/// assert_eq!("Hello world!".encode_hex_upper::<String>(), "48656C6C6F20776F726C6421");
 /// ```
 #[cfg_attr(feature = "alloc", doc = "\n[`encode`]: crate::encode")]
 #[cfg_attr(not(feature = "alloc"), doc = "\n[`encode`]: crate::encode_to_slice")]
@@ -39,10 +38,6 @@ pub trait ToHex {
     /// Encode the hex strict representing `self` into the result.
     /// Lower case letters are used (e.g. `f9b4ca`).
     fn encode_hex<T: iter::FromIterator<char>>(&self) -> T;
-
-    /// Encode the hex strict representing `self` into the result.
-    /// Upper case letters are used (e.g. `F9B4CA`).
-    fn encode_hex_upper<T: iter::FromIterator<char>>(&self) -> T;
 }
 
 /// Encoding values as hex string.
@@ -56,9 +51,7 @@ pub trait ToHex {
 /// use const_hex::ToHexExt;
 ///
 /// assert_eq!("Hello world!".encode_hex(), "48656c6c6f20776f726c6421");
-/// assert_eq!("Hello world!".encode_hex_upper(), "48656C6C6F20776F726C6421");
 /// assert_eq!("Hello world!".encode_hex_with_prefix(), "0x48656c6c6f20776f726c6421");
-/// assert_eq!("Hello world!".encode_hex_upper_with_prefix(), "0x48656C6C6F20776F726C6421");
 /// ```
 #[cfg(feature = "alloc")]
 pub trait ToHexExt {
@@ -66,25 +59,17 @@ pub trait ToHexExt {
     /// Lower case letters are used (e.g. `f9b4ca`).
     fn encode_hex(&self) -> String;
 
-    /// Encode the hex strict representing `self` into the result.
-    /// Upper case letters are used (e.g. `F9B4CA`).
-    fn encode_hex_upper(&self) -> String;
-
     /// Encode the hex strict representing `self` into the result with prefix `0x`.
     /// Lower case letters are used (e.g. `0xf9b4ca`).
     fn encode_hex_with_prefix(&self) -> String;
-
-    /// Encode the hex strict representing `self` into the result with prefix `0X`.
-    /// Upper case letters are used (e.g. `0xF9B4CA`).
-    fn encode_hex_upper_with_prefix(&self) -> String;
 }
 
-struct BytesToHexChars<'a, const UPPER: bool> {
+struct BytesToHexChars<'a> {
     inner: core::slice::Iter<'a, u8>,
     next: Option<char>,
 }
 
-impl<'a, const UPPER: bool> BytesToHexChars<'a, UPPER> {
+impl<'a> BytesToHexChars<'a> {
     fn new(inner: &'a [u8]) -> Self {
         BytesToHexChars {
             inner: inner.iter(),
@@ -93,14 +78,14 @@ impl<'a, const UPPER: bool> BytesToHexChars<'a, UPPER> {
     }
 }
 
-impl<const UPPER: bool> Iterator for BytesToHexChars<'_, UPPER> {
+impl Iterator for BytesToHexChars<'_> {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.next.take() {
             Some(current) => Some(current),
             None => self.inner.next().map(|byte| {
-                let (high, low) = crate::byte2hex::<UPPER>(*byte);
+                let (high, low) = crate::byte2hex(*byte);
                 self.next = Some(low as char);
                 high as char
             }),
@@ -109,20 +94,15 @@ impl<const UPPER: bool> Iterator for BytesToHexChars<'_, UPPER> {
 }
 
 #[inline]
-fn encode_to_iter<T: iter::FromIterator<char>, const UPPER: bool>(source: &[u8]) -> T {
-    BytesToHexChars::<UPPER>::new(source).collect()
+fn encode_to_iter<T: iter::FromIterator<char>>(source: &[u8]) -> T {
+    BytesToHexChars::new(source).collect()
 }
 
 #[allow(deprecated)]
 impl<T: AsRef<[u8]>> ToHex for T {
     #[inline]
     fn encode_hex<U: iter::FromIterator<char>>(&self) -> U {
-        encode_to_iter::<_, false>(self.as_ref())
-    }
-
-    #[inline]
-    fn encode_hex_upper<U: iter::FromIterator<char>>(&self) -> U {
-        encode_to_iter::<_, true>(self.as_ref())
+        encode_to_iter(self.as_ref())
     }
 }
 
@@ -134,18 +114,8 @@ impl<T: AsRef<[u8]>> ToHexExt for T {
     }
 
     #[inline]
-    fn encode_hex_upper(&self) -> String {
-        crate::encode_upper(self)
-    }
-
-    #[inline]
     fn encode_hex_with_prefix(&self) -> String {
         crate::encode_prefixed(self)
-    }
-
-    #[inline]
-    fn encode_hex_upper_with_prefix(&self) -> String {
-        crate::encode_upper_prefixed(self)
     }
 }
 

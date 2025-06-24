@@ -70,20 +70,14 @@ impl<const N: usize, const PREFIX: bool> Buffer<N, PREFIX> {
     /// Print an array of bytes into this buffer.
     #[inline]
     pub const fn const_format(self, array: &[u8; N]) -> Self {
-        self.const_format_inner::<false>(array)
-    }
-
-    /// Print an array of bytes into this buffer.
-    #[inline]
-    pub const fn const_format_upper(self, array: &[u8; N]) -> Self {
-        self.const_format_inner::<true>(array)
+        self.const_format_inner(array)
     }
 
     /// Same as `encode_to_slice_inner`, but const-stable.
-    const fn const_format_inner<const UPPER: bool>(mut self, array: &[u8; N]) -> Self {
+    const fn const_format_inner(mut self, array: &[u8; N]) -> Self {
         let mut i = 0;
         while i < N {
-            let (high, low) = byte2hex::<UPPER>(array[i]);
+            let (high, low) = byte2hex(array[i]);
             self.bytes[i][0] = high;
             self.bytes[i][1] = low;
             i += 1;
@@ -92,23 +86,15 @@ impl<const N: usize, const PREFIX: bool> Buffer<N, PREFIX> {
     }
 
     /// Print an array of bytes into this buffer and return a reference to its
-    /// *lower* hex string representation within the buffer.
+    /// hex string representation within the buffer.
     #[inline]
     pub fn format(&mut self, array: &[u8; N]) -> &mut str {
         // length of array is guaranteed to be N.
-        self.format_inner::<false>(array)
-    }
-
-    /// Print an array of bytes into this buffer and return a reference to its
-    /// *upper* hex string representation within the buffer.
-    #[inline]
-    pub fn format_upper(&mut self, array: &[u8; N]) -> &mut str {
-        // length of array is guaranteed to be N.
-        self.format_inner::<true>(array)
+        self.format_inner(array)
     }
 
     /// Print a slice of bytes into this buffer and return a reference to its
-    /// *lower* hex string representation within the buffer.
+    /// hex string representation within the buffer.
     ///
     /// # Panics
     ///
@@ -116,37 +102,25 @@ impl<const N: usize, const PREFIX: bool> Buffer<N, PREFIX> {
     #[track_caller]
     #[inline]
     pub fn format_slice<T: AsRef<[u8]>>(&mut self, slice: T) -> &mut str {
-        self.format_slice_inner::<false>(slice.as_ref())
-    }
-
-    /// Print a slice of bytes into this buffer and return a reference to its
-    /// *upper* hex string representation within the buffer.
-    ///
-    /// # Panics
-    ///
-    /// If the slice is not exactly `N` bytes long.
-    #[track_caller]
-    #[inline]
-    pub fn format_slice_upper<T: AsRef<[u8]>>(&mut self, slice: T) -> &mut str {
-        self.format_slice_inner::<true>(slice.as_ref())
+        self.format_slice_inner(slice.as_ref())
     }
 
     // Checks length
     #[track_caller]
-    fn format_slice_inner<const UPPER: bool>(&mut self, slice: &[u8]) -> &mut str {
+    fn format_slice_inner(&mut self, slice: &[u8]) -> &mut str {
         assert_eq!(slice.len(), N, "length mismatch");
-        self.format_inner::<UPPER>(slice)
+        self.format_inner(slice)
     }
 
     // Doesn't check length
     #[inline]
-    fn format_inner<const UPPER: bool>(&mut self, input: &[u8]) -> &mut str {
+    fn format_inner(&mut self, input: &[u8]) -> &mut str {
         // SAFETY: Length was checked previously;
         // we only write only ASCII bytes.
         unsafe {
             let buf = self.as_mut_bytes();
             let output = buf.as_mut_ptr().add(PREFIX as usize * 2);
-            imp::encode::<UPPER>(input, output);
+            imp::encode(input, output);
             str::from_utf8_unchecked_mut(buf)
         }
     }
