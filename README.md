@@ -12,10 +12,6 @@ This is a fork of https://github.com/danipopes/const-hex that enforces strict lo
 
 _Version requirement: rustc 1.64+_
 
-[const-eval]: https://docs.rs/lowercase-hex/latest/lowercase_hex/fn.const_encode.html
-[buffer]: https://docs.rs/lowercase-hex/latest/lowercase_hex/struct.Buffer.html
-[`itoa`]: https://docs.rs/itoa/latest/itoa/struct.Buffer.html
-
 ## Performance
 
 This crate offers performance comparable to [`faster-hex`] on `x86`/`x86-64`

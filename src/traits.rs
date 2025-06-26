@@ -51,17 +51,12 @@ pub trait ToHex {
 /// use lowercase_hex::ToHexExt;
 ///
 /// assert_eq!("Hello world!".encode_hex(), "48656c6c6f20776f726c6421");
-/// assert_eq!("Hello world!".encode_hex_with_prefix(), "0x48656c6c6f20776f726c6421");
 /// ```
 #[cfg(feature = "alloc")]
 pub trait ToHexExt {
     /// Encode the hex strict representing `self` into the result.
     /// Lower case letters are used (e.g. `f9b4ca`).
     fn encode_hex(&self) -> String;
-
-    /// Encode the hex strict representing `self` into the result with prefix `0x`.
-    /// Lower case letters are used (e.g. `0xf9b4ca`).
-    fn encode_hex_with_prefix(&self) -> String;
 }
 
 struct BytesToHexChars<'a> {
@@ -111,11 +106,6 @@ impl<T: AsRef<[u8]>> ToHexExt for T {
     #[inline]
     fn encode_hex(&self) -> String {
         crate::encode(self)
-    }
-
-    #[inline]
-    fn encode_hex_with_prefix(&self) -> String {
-        crate::encode_prefixed(self)
     }
 }
 

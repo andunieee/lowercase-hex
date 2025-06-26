@@ -15,14 +15,6 @@ fn buffer_fmt() {
 }
 
 #[test]
-fn buffer_prefix() {
-    let mut buffer = Buffer::<256, true>::new();
-    let s = buffer.format(&ALL);
-    assert_eq!(&s[..2], "0x");
-    assert_lower(&s[2..]);
-}
-
-#[test]
 fn buffer_array_lower() {
     let mut buffer = Buffer::<256>::new();
     let s = buffer.format(&ALL);
@@ -47,14 +39,6 @@ fn buffer_const_lower() {
 fn encode_lower() {
     let encoded = lowercase_hex::encode(ALL);
     assert_lower(&encoded);
-}
-
-#[test]
-#[cfg(feature = "alloc")]
-fn encode_lower_prefixed() {
-    let encoded = lowercase_hex::encode_prefixed(ALL);
-    assert_eq!(&encoded[0..2], "0x");
-    assert_lower(&encoded[2..]);
 }
 
 #[test]

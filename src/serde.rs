@@ -36,7 +36,7 @@ mod serialize {
         S: Serializer,
         T: AsRef<[u8]>,
     {
-        serializer.serialize_str(&crate::encode_prefixed(data.as_ref()))
+        serializer.serialize_str(&crate::encode(data.as_ref()))
     }
 }
 

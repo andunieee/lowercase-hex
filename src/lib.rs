@@ -7,16 +7,9 @@
 //! This crate provides a fast conversion of byte arrays to **lowercase** hexadecimal strings,
 //! both at compile time, and at run time.
 //!
-//! **Important**: This crate only supports lowercase hex characters (a-f). Uppercase hex characters (A-F) are rejected during decoding.
-//!
-//! It aims to be a drop-in replacement for the [`hex`] crate, as well as
-//! extending the API with [const-eval](const_encode), a
-//! [const-generics formatting buffer](Buffer), similar to [`itoa`]'s, and more.
+//! This is a fork of <https://github.com/danipopes/const-hex> that enforces strict lowercase.
 //!
 //! _Version requirement: rustc 1.64+_
-//!
-//! [`itoa`]: https://docs.rs/itoa/latest/itoa/struct.Buffer.html
-//! [`hex`]: https://docs.rs/hex
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
@@ -193,22 +186,6 @@ pub fn encode_to_slice<T: AsRef<[u8]>>(input: T, output: &mut [u8]) -> Result<()
 #[inline]
 pub fn encode<T: AsRef<[u8]>>(data: T) -> String {
     encode_inner::<false>(data.as_ref())
-}
-
-/// Encodes `data` as a prefixed hex string using lowercase characters.
-///
-/// See [`encode()`] for more details.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(lowercase_hex::encode_prefixed("Hello world!"), "0x48656c6c6f20776f726c6421");
-/// assert_eq!(lowercase_hex::encode_prefixed([1, 2, 3, 15, 16]), "0x0102030f10");
-/// ```
-#[cfg(feature = "alloc")]
-#[inline]
-pub fn encode_prefixed<T: AsRef<[u8]>>(data: T) -> String {
-    encode_inner::<true>(data.as_ref())
 }
 
 /// Decode a hex string into a fixed-length byte-array.

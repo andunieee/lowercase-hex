@@ -1,6 +1,6 @@
 [package]
 name = "lowercase-hex"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["andunië <andunie@cassis.cash>"]
 description = "Fast byte array to lowercase hex string conversion"
 edition = "2021"
